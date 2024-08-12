@@ -1,4 +1,4 @@
-/** @odoo-module */
+/** @odoo-module **/
 
 import {FormController} from "@web/views/form/form_controller";
 import {ListController} from "@web/views/list/list_controller";
@@ -9,7 +9,7 @@ import {useService} from "@web/core/utils/hooks";
 
 export const patchControllerSignOca = {
     setup() {
-        this._super(...arguments);
+        super.setup(...arguments);
         this.userService = useService("user");
         this.orm = useService("orm");
         this.action = useService("action");

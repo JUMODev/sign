@@ -36,7 +36,6 @@
                         name="state"
                         widget="statusbar"
                         statusbar_visible="sent,signed"
-                        readonly="1"
                     />
                 </header>
                 <sheet>
@@ -98,26 +97,21 @@
                         <h1><field name="name" /></h1>
                     </div>
                     <group>
-                        <field
-                            name="data"
-                            filename="filename"
-                            readonly="state != 'draft'"
-                        />
+                        <field name="data" filename="filename" />
                         <field name="filename" invisible="1" />
                         <field
                             name="template_id"
                             invisible="not template_id"
-                            readonly="1"
                         />
-                        <field name="user_id" readonly="state != 'draft'" />
-                        <field name="record_ref" readonly="state != 'draft'" />
+                        <field name="user_id" />
+                        <field name="record_ref" />
                     </group>
 
-                    <field name="signer_ids" nolabel="1" readonly="state != 'draft'">
+                    <field name="signer_ids" nolabel="1">
                         <tree editable="bottom">
                             <field name="role_id" />
                             <field name="partner_id" />
-                            <field name="signed_on" readonly="1" />
+                            <field name="signed_on" />
                         </tree>
                     </field>
                 </sheet>
@@ -230,7 +224,7 @@
                     type="object"
                     invisible="not to_sign or state != 'sent'"
                 />
-                <field name="to_sign" column_invisible="1" />
+                <field name="to_sign" invisible="1" />
             </tree>
         </field>
     </record>
@@ -349,7 +343,7 @@
                         string="Sign"
                         type="object"
                         name="sign"
-                        invisible="not is_allow_signature"
+                        invisibleis="allow_signature == False"
                     />
                 </header>
                 <sheet>
@@ -385,7 +379,7 @@
         <field name="name">Sign Requests</field>
         <field name="res_model">sign.oca.request</field>
         <field name="view_mode">kanban,tree,form</field>
-        <field name="domain">[('template_id', '=', id)]</field>
+        <field name="domain">[('template_id', '=', active_id)]</field>
         <field name="context">{}</field>
     </record>
 

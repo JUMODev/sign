@@ -1,7 +1,7 @@
 /** @odoo-module **/
 
-import {attr, one} from "@mail/model/model_field";
-import {registerModel} from "@mail/model/model_core";
+import {attr, one} from "./model_field";
+import {registerModel} from "./model_core";
 
 registerModel({
     name: "ir.model.request",
@@ -28,3 +28,4 @@ registerModel({
         name: attr(),
     },
 });
+

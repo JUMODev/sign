@@ -3,45 +3,41 @@
 
 import base64
 
-import requests
-
 from odoo.modules.module import get_module_resource
 from odoo.tests.common import HttpCase, tagged
 
 
 @tagged("post_install", "-at_install")
 class TestSign(HttpCase):
-    @classmethod
-    def setUpClass(cls):
-        cls._super_send = requests.Session.send
-        super().setUpClass()
-        cls.data = base64.b64encode(
+    def setUp(self):
+        super().setUp()
+        self.data = base64.b64encode(
             open(
                 get_module_resource("sign_oca", "tests", "empty.pdf"),
                 "rb",
             ).read()
         )
-        cls.signer = cls.env["res.partner"].create({"name": "Signer"})
-        cls.request = cls.env["sign.oca.request"].create(
+        self.signer = self.env["res.partner"].create({"name": "Signer"})
+        self.request = self.env["sign.oca.request"].create(
             {
-                "data": cls.data,
+                "data": self.data,
                 "name": "Demo template",
                 "signer_ids": [
                     (
                         0,
                         0,
                         {
-                            "partner_id": cls.signer.id,
-                            "role_id": cls.env.ref("sign_oca.sign_role_customer").id,
+                            "partner_id": self.signer.id,
+                            "role_id": self.env.ref("sign_oca.sign_role_customer").id,
                         },
                     )
                 ],
             }
         )
-        cls.item = cls.request.add_item(
+        self.item = self.request.add_item(
             {
-                "role_id": cls.env.ref("sign_oca.sign_role_customer").id,
-                "field_id": cls.env.ref("sign_oca.sign_field_name").id,
+                "role_id": self.env.ref("sign_oca.sign_role_customer").id,
+                "field_id": self.env.ref("sign_oca.sign_field_name").id,
                 "page": 1,
                 "position_x": 10,
                 "position_y": 10,
@@ -50,11 +46,6 @@ class TestSign(HttpCase):
             }
         )
 
-    @classmethod
-    def _request_handler(cls, s, r, /, **kw):
-        """Don't block external requests."""
-        return cls._super_send(s, r, **kw)
-
     def test_portal(self):
         self.authenticate("portal", "portal")
         self.request.action_send()
@@ -62,12 +53,14 @@ class TestSign(HttpCase):
         self.assertEqual(
             base64.b64decode(self.data),
             self.url_open(
-                f"/sign_oca/content/{self.request.signer_ids.id}/{self.request.signer_ids.access_token}"
+                "/sign_oca/content/%s/%s"
+                % (self.request.signer_ids.id, self.request.signer_ids.access_token)
             ).content,
         )
         self.assertEqual(
             self.url_open(
-                f"/sign_oca/info/{self.request.signer_ids.id}/{self.request.signer_ids.access_token}",
+                "/sign_oca/info/%s/%s"
+                % (self.request.signer_ids.id, self.request.signer_ids.access_token),
                 data="{}",
                 headers={"Content-Type": "application/json"},
             ).json()["result"]["items"][str(self.item["id"])],
