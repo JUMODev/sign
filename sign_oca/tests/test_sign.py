@@ -3,6 +3,8 @@
 
 import base64
 
+import requests
+
 from odoo.modules.module import get_module_resource
 from odoo.tests.common import Form, TransactionCase
 
@@ -10,6 +12,7 @@ from odoo.tests.common import Form, TransactionCase
 class TestSign(TransactionCase):
     @classmethod
     def setUpClass(cls):
+        cls._super_send = requests.Session.send
         super().setUpClass()
         cls.data = base64.b64encode(
             open(
@@ -82,6 +85,11 @@ class TestSign(TransactionCase):
                 "required": True,
             }
         )
+
+    @classmethod
+    def _request_handler(cls, s, r, /, **kw):
+        """Don't block external requests."""
+        return cls._super_send(s, r, **kw)
 
     def test_template_configuration(self):
         self.assertFalse(self.template.get_info()["items"])
@@ -171,10 +179,7 @@ class TestSign(TransactionCase):
 
     def test_sign_request_role_with_expression(self):
         request_form = Form(self.env["sign.oca.request"])
-        request_form.record_ref = "%s,%s" % (
-            self.partner_child._name,
-            self.partner_child.id,
-        )
+        request_form.record_ref = f"{self.partner_child._name},{self.partner_child.id}"
         with request_form.signer_ids.new() as signer:
             signer.role_id = self.role_child_partner
             self.assertEqual(signer.partner_id, self.partner)

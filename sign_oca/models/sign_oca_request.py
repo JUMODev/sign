@@ -18,23 +18,18 @@ from odoo.http import request
 
 
 class SignOcaRequest(models.Model):
-
     _name = "sign.oca.request"
     _inherit = ["mail.thread", "mail.activity.mixin"]
     _description = "Sign Request"
 
     name = fields.Char(required=True)
     active = fields.Boolean(default=True)
-    template_id = fields.Many2one("sign.oca.template", readonly=True)
-    data = fields.Binary(
-        required=True, readonly=True, states={"draft": [("readonly", False)]}
-    )
+    template_id = fields.Many2one("sign.oca.template")
+    data = fields.Binary(required=True)
     filename = fields.Char()
     user_id = fields.Many2one(
         comodel_name="res.users",
         string="Responsible",
-        readonly=True,
-        states={"draft": [("readonly", False)]},
         default=lambda self: self.env.user,
         required=True,
     )
@@ -46,8 +41,6 @@ class SignOcaRequest(models.Model):
             )
         ],
         string="Object",
-        readonly=True,
-        states={"draft": [("readonly", False)]},
     )
     signed = fields.Boolean(copy=False)
     signer_ids = fields.One2many(
@@ -55,8 +48,6 @@ class SignOcaRequest(models.Model):
         inverse_name="request_id",
         auto_join=True,
         copy=True,
-        readonly=True,
-        states={"draft": [("readonly", False)]},
     )
     signer_id = fields.Many2one(
         comodel_name="sign.oca.request.signer",
@@ -71,7 +62,6 @@ class SignOcaRequest(models.Model):
             ("cancel", "Cancelled"),
         ],
         default="draft",
-        readonly=True,
         required=True,
         copy=False,
         tracking=True,
@@ -81,16 +71,13 @@ class SignOcaRequest(models.Model):
     to_sign = fields.Boolean(compute="_compute_to_sign")
     signatory_data = fields.Serialized(
         default=lambda r: {},
-        readonly=True,
         copy=False,
     )
-    current_hash = fields.Char(readonly=True, copy=False)
+    current_hash = fields.Char(copy=False)
     company_id = fields.Many2one(
         "res.company",
         default=lambda r: r.env.company.id,
         required=True,
-        readonly=True,
-        states={"draft": [("readonly", False)]},
     )
     next_item_id = fields.Integer(compute="_compute_next_item_id")
 
@@ -336,7 +323,6 @@ class SignOcaRequest(models.Model):
 
 
 class SignOcaRequestSigner(models.Model):
-
     _name = "sign.oca.request.signer"
     _inherit = "portal.mixin"
     _description = "Sign Request Value"
@@ -346,8 +332,8 @@ class SignOcaRequestSigner(models.Model):
     partner_name = fields.Char(related="partner_id.name")
     partner_id = fields.Many2one("res.partner", required=True, ondelete="restrict")
     role_id = fields.Many2one("sign.oca.role", required=True, ondelete="restrict")
-    signed_on = fields.Datetime(readonly=True)
-    signature_hash = fields.Char(readonly=True)
+    signed_on = fields.Datetime()
+    signature_hash = fields.Char()
     model = fields.Char(compute="_compute_model", store=True)
     res_id = fields.Integer(compute="_compute_res_id", store=True)
     is_allow_signature = fields.Boolean(compute="_compute_is_allow_signature")
@@ -375,10 +361,7 @@ class SignOcaRequestSigner(models.Model):
     def _compute_access_url(self):
         result = super()._compute_access_url()
         for record in self:
-            record.access_url = "/sign_oca/document/%s/%s" % (
-                record.id,
-                record.access_token,
-            )
+            record.access_url = f"/sign_oca/document/{record.id}/{record.access_token}"
         return result
 
     @api.onchange("role_id")
@@ -553,9 +536,9 @@ class SignOcaRequestSigner(models.Model):
         self.ensure_one()
         return self.request_id._set_action_log(action, signer_id=self.id, **kwargs)
 
-    def name_get(self):
-        result = [(signer.id, (signer.partner_id.display_name)) for signer in self]
-        return result
+    def _compute_display_name(self):
+        for signer in self:
+            signer.display_name = signer.partner_id.display_name
 
 
 class SignRequestLog(models.Model):
@@ -567,13 +550,10 @@ class SignRequestLog(models.Model):
     uid = fields.Many2one(
         "res.users",
         required=True,
-        readonly=True,
         ondelete="cascade",
         default=lambda r: r.env.user.id,
     )
-    date = fields.Datetime(
-        required=True, readonly=True, default=lambda r: fields.Datetime.now()
-    )
+    date = fields.Datetime(required=True, default=lambda r: fields.Datetime.now())
     partner_id = fields.Many2one(
         "res.partner", required=True, default=lambda r: r.env.user.partner_id.id
     )
@@ -592,7 +572,6 @@ class SignRequestLog(models.Model):
             ("configure", "Configure"),
         ],
         required=True,
-        readonly=True,
     )
-    access_token = fields.Char(readonly=True)
-    ip = fields.Char(readonly=True)
+    access_token = fields.Char()
+    ip = fields.Char()

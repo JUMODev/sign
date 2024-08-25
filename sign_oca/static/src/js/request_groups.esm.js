@@ -1,7 +1,7 @@
 /** @odoo-module **/
 
-import {attr, many, one} from "./model_field";
-import {registerModel} from "./model_core";
+import {attr, many, one} from "@mail/model/model_field";
+import {registerModel} from "@mail/model/model_core";
 
 registerModel({
     name: "RequestGroup",
